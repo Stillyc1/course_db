@@ -4,21 +4,22 @@ from src.config import config
 from src.hh_load_vacancies import HeadHunterAPI
 
 
-def db_create():
+def db_create() -> None:
     """Функция создает DB для загрузки вакансий"""
     params = config()  # Получаем параметры для входа и создания DataBase
 
-    conn = psycopg2.connect(dbname='postgres', **params)
+    conn = psycopg2.connect(dbname='postgres', **params)  # Коннект с DB
     conn.autocommit = True
-    cur = conn.cursor()
+    cur = conn.cursor()  # Курсор для работы с DB
 
-    cur.execute(f"DROP DATABASE company")
-    cur.execute(f"CREATE DATABASE company")
+    cur.execute(f"DROP DATABASE company")  # Удаление базы данных (обновляем)
+    cur.execute(f"CREATE DATABASE company")  # Создание базы данных
 
-    conn.close()
+    cur.close()  # Закрытие курсора
+    conn.close()  # закрытие коннекта
 
 
-def db_create_table():
+def db_create_table() -> None:
     """Функция создает таблицы в DB"""
     params = config()
     conn = psycopg2.connect(dbname='company', **params)
@@ -44,16 +45,16 @@ def db_create_table():
     conn.close()
 
 
-def load_to_database_company(company_list):
+def load_to_database_company(company_list: list) -> None:
     """Функция записывает в DB данные о вакансиях"""
     params = config()
     conn = psycopg2.connect(dbname='company', **params)
 
     for company in company_list:
-        hh = HeadHunterAPI()
-        hh.load_vacancies(company)
-        hh.correct_vacancy()
-        vacancy_list = hh.vacancies
+        hh = HeadHunterAPI()  # создаем экз. класса ApiHH
+        hh.load_vacancies(company)  # загрузка вакансий по циклу - keyword из списка
+        hh.correct_vacancy()  # редактирование вакансий корректного формата
+        vacancy_list = hh.vacancies  # получение списка вакансий
 
         with conn.cursor() as cur:
             cur.execute(
