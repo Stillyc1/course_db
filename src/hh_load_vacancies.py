@@ -32,18 +32,18 @@ class HeadHunterAPI(BaseLoadVacancies):
         cor_vacancy = []
         for vacancies in self.__vacancies:
             vacancy_dict = {
-                'name': vacancies['name'],
-                'salary': {
-                    'from': vacancies['salary']['from'] if vacancies['salary'] is not None else 0,
-                    'to': vacancies['salary']['to'] if vacancies['salary'] is not None else "Не указана",
-                    'currency': vacancies['salary']['currency'] if vacancies['salary'] is not None else "не указана"
+                "name": vacancies["name"],
+                "salary": {
+                    "from": vacancies["salary"]["from"] if vacancies["salary"] is not None else 0,
+                    "to": vacancies["salary"]["to"] if vacancies["salary"] is not None else 0,
+                    "currency": vacancies["salary"]["currency"] if vacancies["salary"] is not None else "не указана",
                 },
-                'url': vacancies['url'],
-                'description': vacancies['snippet']['responsibility'],
-                'employer': {
-                    'name': vacancies['employer']['name'],
-                    'url': vacancies['employer']['url'] if vacancies['employer']['url'] is not None else 'не указан'
-                }
+                "url": vacancies["url"],
+                "description": vacancies["snippet"]["responsibility"],
+                "employer": {
+                    "name": vacancies["employer"]["name"],
+                    "url": vacancies["employer"]["url"] if vacancies["employer"]["url"] is not None else "не указан",
+                },
             }
             cor_vacancy.append(vacancy_dict)
         self.__vacancies = cor_vacancy
@@ -64,4 +64,4 @@ if __name__ == "__main__":
 
     # Получаем название компаний
     # print([i['employer']['name'] for i in vacancy if company_name in i['employer']['name']])
-    print(len([v['employer']['url'] for v in vacancy]))
+    print(len([v["employer"]["url"] for v in vacancy]))
