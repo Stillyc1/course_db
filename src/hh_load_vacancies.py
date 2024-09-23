@@ -9,59 +9,51 @@ class HeadHunterAPI(BaseLoadVacancies):
     def __init__(self, file_worker: str = "data/json_vacancies.json"):
         """Конструктор обьекта запроса инфо через API сервис"""
 
-        self.__url = "https://api.hh.ru/vacancies"
-        self.__headers = {"User-Agent": "HH-User-Agent"}
-        self.__params = {"text": "", "page": 0, "per_page": 10}
-        self.__vacancies = []  # конечный список, в который складываются вакансии list[dict]
+        self.__url = 'https://api.hh.ru/'
+        self.__headers = {'User-Agent': 'HH-User-Agent'}
+        self.__params = None
+        self.employers = [3529, 2180, 9498112, 3776, 9498120, 78638, 23427, 3127, 4181, 80]
         super().__init__(file_worker)
 
-    def load_vacancies(self, keyword: str):
+    def load_vacancies(self):
         """Метод загрузки данных вакансий из API сервиса"""
 
-        self.__params["text"] = keyword
-        while self.__params.get("page") != 1:
-            response = requests.get(self.__url, headers=self.__headers, params=self.__params)
-            vacancies = response.json()["items"]
-            self.__vacancies.extend(vacancies)
-            self.__params["page"] += 1
+        emp_params = {
+            "sort_by": "by_vacancies_open"
+        }
+        employers = []
+        for employer_id in self.employers:
+            emp_url = f"{self.__url}employers/{employer_id}"
+            employer_info = requests.get(emp_url, headers=self.__headers, params=emp_params).json()
+            employers.append(employer_info)
 
-        return self.__vacancies
+        return employers
 
-    def correct_vacancy(self):
+    def correct_vacancy(self, num_vac):
         """Метод преобразования вакансий в корректный формат"""
-        cor_vacancy = []
-        for vacancies in self.__vacancies:
-            vacancy_dict = {
-                "name": vacancies["name"],
-                "salary": {
-                    "from": vacancies["salary"]["from"] if vacancies["salary"] is not None else 0,
-                    "to": vacancies["salary"]["to"] if vacancies["salary"] is not None else 0,
-                    "currency": vacancies["salary"]["currency"] if vacancies["salary"] is not None else "не указана",
-                },
-                "url": vacancies["url"],
-                "description": vacancies["snippet"]["responsibility"],
-                "employer": {
-                    "name": vacancies["employer"]["name"],
-                    "url": vacancies["employer"]["url"] if vacancies["employer"]["url"] is not None else "не указан",
-                },
+        vac_url = f"{self.__url}vacancies"
+        vacancies = []
+        for emp in self.employers:
+            vacancy_params = {
+                "employer_id": emp,
+                "per_page": num_vac,
+                "only_with_salary": True
             }
-            cor_vacancy.append(vacancy_dict)
-        self.__vacancies = cor_vacancy
-
-    @property
-    def vacancies(self):
-        """Получение списка вакансий"""
-        return self.__vacancies
+            response = requests.get(vac_url, headers=self.__headers, params=vacancy_params)
+            if response.status_code == 200:
+                vac = response.json()["items"]
+                vacancies.extend(vac)
+            else:
+                raise Exception(f"Ошибка {response.status_code}: {response.text}")
+        return vacancies
 
 
 if __name__ == "__main__":
     hh = HeadHunterAPI()  # Создаем экземпляр класса
-
-    company_name = "Сбербанк"  # Динамическое название компаний
-    hh.load_vacancies(company_name)  # Метод загрузки вакансий
-    hh.correct_vacancy()
-    vacancy = hh.vacancies  # Получаем список вакансий
-
-    # Получаем название компаний
-    # print([i['employer']['name'] for i in vacancy if company_name in i['employer']['name']])
-    print(len([v["employer"]["url"] for v in vacancy]))
+    hh_employers = hh.load_vacancies()  # список компаний id и name
+    hh_vacancy = hh.correct_vacancy(10)
+    # print([hh['name'] for hh in hh_employers])
+    # print([h['name'] for h in hh])
+    # print([h['id'] for h in hh])  # Метод загрузки вакансий
+    # print([h['insider_interviews'] for h in hh])
+    # print([hh['description'] for hh in h])

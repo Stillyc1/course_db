@@ -4,22 +4,12 @@ from src.config import config
 
 
 def main():
-    company_to_load_vacancies = ['Сбербанк', 'Газпром',
-                                 'Роснефть', 'Яндекс',
-                                 'ВТБ', 'Мегафон',
-                                 'Альфа банк', 'Лукойл',
-                                 'Татнефть', 'Новатэк']
 
     db_create()  # Функция создания DB
     db_create_table()  # Функция создания таблиц в DB
-    load_to_database_company(company_to_load_vacancies)  # Функция загрузки инфо о вакансиях в таблицы DB
+    load_to_database_company()  # Функция загрузки инфо о вакансиях в таблицы DB
 
     params = config()  # Задаем конфигурацию параметров для DB
-
-    print("Добрый день!\n\nВы можете посмотреть вакансии по следующим компаниям:")
-    for vacancy in company_to_load_vacancies:
-        print(vacancy)
-
 
     db_company = DBManager('company', params)
 

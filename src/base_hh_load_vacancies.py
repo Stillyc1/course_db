@@ -10,6 +10,6 @@ class BaseLoadVacancies(ABC):
         self.file_worker = file_worker
 
     @abstractmethod
-    def load_vacancies(self, keyword: str) -> object:
+    def load_vacancies(self) -> object:
         """Метод загрузки вакансий и сохранения в List[dict]"""
         pass

@@ -28,9 +28,9 @@ def db_create_table() -> None:
         cur.execute(
             """
                 CREATE TABLE company (
-                    company_id SERIAL PRIMARY KEY,
-                    company_name VARCHAR(255) NOT NULL,
-                    company_url VARCHAR(255));
+                    id SERIAL UNIQUE,
+                    company_id INT PRIMARY KEY,
+                    company_name VARCHAR(255) NOT NULL);
                 CREATE TABLE vacancy (
                     vacancy_id SERIAL PRIMARY KEY,
                     company_id INT REFERENCES company(company_id),
@@ -47,46 +47,54 @@ def db_create_table() -> None:
     conn.close()
 
 
-def load_to_database_company(company_list: list) -> None:
+def load_to_database_company() -> None:
     """Функция записывает в DB данные о вакансиях"""
     params = config()
     conn = psycopg2.connect(dbname="company", **params)
 
-    for company in company_list:
-        hh = HeadHunterAPI()  # создаем экз. класса ApiHH
-        hh.load_vacancies(company)  # загрузка вакансий по циклу - keyword из списка
-        hh.correct_vacancy()  # редактирование вакансий корректного формата
-        vacancy_list = hh.vacancies  # получение списка вакансий
+    hh = HeadHunterAPI()  # создаем экз. класса ApiHH
+    hh_employers = hh.load_vacancies()  # список компаний id и name
+    hh_vacancy = hh.correct_vacancy(10)  # список вакансий
 
+    for employer in hh_employers:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO company (company_name, company_url)
+                INSERT INTO company (company_id, company_name)
                 VALUES (%s, %s)
                 RETURNING company_id
                 """,
-                vars=(company, vacancy_list[0]["employer"]["url"]),
+                vars=(employer['id'], employer["name"]),
             )
 
             company_id = cur.fetchone()[0]
 
-            for vacancy in vacancy_list:
-                cur.execute(
-                    """
-                    INSERT INTO vacancy (company_id, vacancy_name, salary_from, salary_to, 
-                    salary_currency, url, description)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    """,
-                    (
-                        company_id,
-                        vacancy["name"],
-                        vacancy["salary"]["from"],
-                        vacancy["salary"]["to"],
-                        vacancy["salary"]["currency"],
-                        vacancy["url"],
-                        vacancy["description"],
-                    ),
-                )
+            for vacancy in hh_vacancy:
+                if int(vacancy['employer']['id']) == int(company_id):
+                    cur.execute(
+                        """
+                        INSERT INTO vacancy (company_id, vacancy_name, salary_from, salary_to, 
+                        salary_currency, url, description)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (
+                            company_id,
+                            vacancy["name"],
+                            vacancy["salary"]["from"],
+                            vacancy["salary"]["to"],
+                            vacancy["salary"]["currency"],
+                            vacancy["url"],
+                            vacancy["snippet"]['responsibility'],
+                        ),
+                    )
+                else:
+                    continue
 
     conn.commit()
     conn.close()
+
+
+if __name__ == '__main__':
+    db_create('../database.ini')
+    db_create_table('../database.ini')
+    load_to_database_company('../database.ini')
